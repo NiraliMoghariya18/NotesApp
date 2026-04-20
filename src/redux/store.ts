@@ -2,16 +2,12 @@ import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import { persistReducer, persistStore } from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDispatch, useSelector } from 'react-redux';
-import loginSlice from '../slice/login';
-import signUpReducer from '../slice/signUp';
-import noteReducer from '../slice/noteDetails';
-import noteDetailsReducer from '../slice/noteDetails';
+import authReducer from './slice/authSlice';
+import notesReducer from './slice/notesSlice';
 
 const rootReducer = combineReducers({
-  loginSlice: loginSlice,
-  signUpSlice: signUpReducer,
-  noteSlice: noteReducer,
-  noteDetailsSlice: noteDetailsReducer,
+  authSlice: authReducer,
+  notesSlice: notesReducer,
 });
 
 const persistConfigData = {
