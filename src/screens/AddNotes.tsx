@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   Image,
   Alert,
@@ -20,6 +19,8 @@ import { strings } from '../utils/strings';
 import { CreateNotesPayload, Note } from '../types/notes.types';
 import axios from 'axios';
 import { colors } from '../utils/color';
+import CustomInput from '../components/CustomInput';
+import CustomButton from '../components/CustomButton';
 
 interface Error {
   title?: string;
@@ -48,10 +49,10 @@ const AddNotes = () => {
     const newErrors: Error = {};
 
     if (!title.trim()) {
-      newErrors.title = 'title is required';
+      newErrors.title = 'Title is required';
     }
     if (!description.trim()) {
-      newErrors.description = 'description is required';
+      newErrors.description = 'Description is required';
     }
 
     setErrors(newErrors);
@@ -110,42 +111,33 @@ const AddNotes = () => {
         </TouchableOpacity>
         <Text style={styles.title}>{strings.createNotes}</Text>
       </View>
-      <View style={styles.inputMainView}>
-        <View style={styles.inputView}>
-          <TextInput
-            placeholder="enter your title"
-            placeholderTextColor={colors.lightGray}
-            value={title}
-            style={styles.inputStyle}
-            onChangeText={handleChangeTitle}
-            multiline={true}
-            numberOfLines={2}
-          />
-        </View>
-        {errors?.title ? (
-          <Text style={styles.errorText}>{errors.title}</Text>
-        ) : null}
-      </View>
-      <View style={styles.inputMainView}>
-        <View style={styles.inputView}>
-          <TextInput
-            value={description}
-            placeholder="enter your description"
-            placeholderTextColor={colors.lightGray}
-            style={styles.inputStyle}
-            onChangeText={handleChangeDescription}
-            multiline={true}
-            numberOfLines={5}
-          />
-        </View>
-        {errors?.description ? (
-          <Text style={styles.errorText}>{errors.description}</Text>
-        ) : null}
-      </View>
 
-      <TouchableOpacity style={styles.submitView} onPress={onSave}>
-        <Text style={styles.submitText}>{strings.submit}</Text>
-      </TouchableOpacity>
+      <CustomInput
+        placeholder="enter your title"
+        placeholderTextColor={colors.lightGray}
+        value={title}
+        style={[styles.inputStyle]}
+        onChangeText={handleChangeTitle}
+        multiline={true}
+        numberOfLines={2}
+        error={errors.title}
+      />
+      <CustomInput
+        value={description}
+        placeholder="enter your description"
+        placeholderTextColor={colors.lightGray}
+        style={styles.inputStyle}
+        onChangeText={handleChangeDescription}
+        multiline={true}
+        numberOfLines={5}
+        error={errors.description}
+      />
+
+      <CustomButton
+        label={strings.submit}
+        onPress={onSave}
+        style={styles.submitView}
+      />
     </SafeAreaView>
   );
 };
@@ -159,7 +151,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: rh(30),
+    marginBottom: rh(20),
   },
   title: {
     fontSize: rf(20),
@@ -169,30 +161,24 @@ const styles = StyleSheet.create({
     marginRight: rw(20),
   },
   back: { width: rw(20), height: rh(20) },
-  inputView: {
-    flexDirection: 'row',
-    borderRadius: rw(14),
+
+  inputStyle: {
     borderWidth: 2,
     borderColor: colors.mediumDarkGray,
-  },
-  inputStyle: {
-    flex: 1,
-    color: colors.darkGray,
     paddingVertical: rh(14),
     paddingHorizontal: rw(15),
     textAlignVertical: 'top',
+    borderRadius: rw(14),
   },
   errorText: { fontSize: rf(12), color: colors.red, marginTop: rh(5) },
   submitView: {
     backgroundColor: colors.blue,
     borderRadius: 10,
-    paddingVertical: rh(10),
-    paddingHorizontal: rw(20),
+    paddingHorizontal: rw(15),
     marginTop: rh(10),
     alignSelf: 'center',
   },
   submitText: { fontSize: rf(17), color: colors.white, fontWeight: 'bold' },
-  inputMainView: { marginVertical: rh(13) },
 });
 
 export default AddNotes;

@@ -6,9 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  TextInput,
   Image,
-  TouchableOpacity,
   Alert,
 } from 'react-native';
 
@@ -22,6 +20,8 @@ import { createSignUpUsers } from '../redux/slice/authSlice';
 import { RootStackParamList } from '../types/navgationTyeps';
 import { strings } from '../utils/strings';
 import { colors } from '../utils/color';
+import CustomInput from '../components/CustomInput';
+import CustomButton from '../components/CustomButton';
 
 interface Error {
   email?: string;
@@ -107,48 +107,36 @@ const SignUp = () => {
           />
         </View>
         <View style={styles.subFormContainer}>
-          <View style={styles.inputView}>
-            <Text style={styles.inputLabel}>{strings.name}</Text>
-            <TextInput
-              placeholder="Write Your Name please"
-              value={name}
-              onChangeText={onChangeName}
-              placeholderTextColor={colors.lightGray}
-              style={styles.inputText}
-            />
-            {errors?.name ? (
-              <Text style={styles.errorText}>{errors.name}</Text>
-            ) : null}
-          </View>
-          <View style={styles.inputView}>
-            <Text style={styles.inputLabel}>{strings.email}</Text>
-            <TextInput
-              placeholder="Write Your Email please"
-              placeholderTextColor={colors.lightGray}
-              value={email}
-              onChangeText={onChangeEmail}
-              style={styles.inputText}
-            />
-            {errors?.email ? (
-              <Text style={styles.errorText}>{errors.email}</Text>
-            ) : null}
-          </View>
-          <View style={styles.inputView}>
-            <Text style={styles.inputLabel}>{strings.password}</Text>
-            <TextInput
-              placeholderTextColor={colors.lightGray}
-              placeholder="Write Your Password please"
-              value={password}
-              onChangeText={onChangePassword}
-              style={styles.inputText}
-            />
-            {errors?.password ? (
-              <Text style={styles.errorText}>{errors.password}</Text>
-            ) : null}
-          </View>
-          <TouchableOpacity style={styles.signUpView} onPress={onLogin}>
-            <Text style={styles.btnText}>{strings.signUp}</Text>
-          </TouchableOpacity>
+          <CustomInput
+            placeholder="Write Your Name please"
+            value={name}
+            onChangeText={onChangeName}
+            placeholderTextColor={colors.lightGray}
+            style={[styles.inputText]}
+            label={strings.name}
+            error={errors.name}
+          />
+
+          <CustomInput
+            placeholder="Write Your Email please"
+            placeholderTextColor={colors.lightGray}
+            value={email}
+            onChangeText={onChangeEmail}
+            style={styles.inputText}
+            label={strings.email}
+            error={errors.email}
+          />
+
+          <CustomInput
+            placeholderTextColor={colors.lightGray}
+            placeholder="Write Your Password please"
+            value={password}
+            onChangeText={onChangePassword}
+            style={styles.inputText}
+            label={strings.password}
+            error={errors.password}
+          />
+          <CustomButton label={strings.signUp} onPress={onLogin} />
           <Text style={styles.accountText}>
             {strings.haveAccount}
             <Text style={styles.color} onPress={signIn}>
@@ -180,7 +168,7 @@ const styles = StyleSheet.create({
   signUpView: {
     backgroundColor: colors.blue,
     borderRadius: rw(20),
-    marginTop: rh(25),
+    marginTop: rh(15),
   },
   btnText: {
     fontSize: rf(16),

@@ -6,9 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  TextInput,
   Image,
-  TouchableOpacity,
   Alert,
 } from 'react-native';
 import { rw, rh, rf } from '../utils/responsive';
@@ -21,6 +19,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navgationTyeps';
 import { LoginPayload } from '../types/notes.types';
 import { colors } from '../utils/color';
+import CustomInput from '../components/CustomInput';
+import CustomButton from '../components/CustomButton';
 
 interface FormError {
   email?: string;
@@ -114,36 +114,27 @@ const Login = () => {
           />
         </View>
         <View style={styles.subFormContainer}>
-          <View style={styles.inputView}>
-            <Text style={styles.inputLabel}>{strings.email}</Text>
-            <TextInput
-              placeholder="Write Your Email please"
-              value={email}
-              onChangeText={onChangeEmail}
-              placeholderTextColor={colors.lightGray}
-              style={styles.inputStyle}
-            />
-            {errors?.email ? (
-              <Text style={styles.errorText}>{errors.email}</Text>
-            ) : null}
-          </View>
-          <View style={styles.inputView}>
-            <Text style={styles.inputLabel}>{strings.password}</Text>
-            <TextInput
-              placeholder="Write Your Password please"
-              value={password}
-              onChangeText={onChangePassword}
-              placeholderTextColor={colors.lightGray}
-              style={styles.inputStyle}
-            />
-            {errors?.password ? (
-              <Text style={styles.errorText}>{errors.password}</Text>
-            ) : null}
-          </View>
+          <CustomInput
+            placeholder="Write Your Email please"
+            value={email}
+            onChangeText={onChangeEmail}
+            placeholderTextColor={colors.lightGray}
+            style={[styles.inputStyle]}
+            label={strings.email}
+            error={errors.email}
+          />
 
-          <TouchableOpacity style={styles.loginView} onPress={onLogin}>
-            <Text style={styles.loginText}>{strings.login}</Text>
-          </TouchableOpacity>
+          <CustomInput
+            placeholder="Write Your Password please"
+            value={password}
+            onChangeText={onChangePassword}
+            placeholderTextColor={colors.lightGray}
+            style={[styles.inputStyle]}
+            label={strings.password}
+            error={errors.password}
+          />
+          <CustomButton label={strings.login} onPress={onLogin} />
+
           <Text style={styles.lastLineText}>
             {strings.DoNotAccount}
             <Text style={styles.subText} onPress={signUp}>
@@ -193,7 +184,7 @@ const styles = StyleSheet.create({
   loginView: {
     backgroundColor: colors.blue,
     borderRadius: rw(20),
-    marginTop: rh(25),
+    marginTop: rh(15),
   },
   loginText: {
     fontSize: rf(16),

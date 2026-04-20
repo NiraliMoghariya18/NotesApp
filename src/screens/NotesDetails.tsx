@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   Image,
   FlatList,
   Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useAppDispatch, useMyAppSelector } from '../redux/store';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,11 +24,20 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { items, RootStackParamList } from '../types/navgationTyeps';
 import moment from 'moment';
 import { colors } from '../utils/color';
+import { Note } from '../types/notes.types';
 
 const NotesDetails = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
   const data = useMyAppSelector(state => state?.notesSlice.fetchNotesData);
+  const loading = useMyAppSelector(state => state?.notesSlice.status);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
 
   useEffect(() => {
     dispatch(fetchNotes());
@@ -78,6 +89,40 @@ const NotesDetails = () => {
   const onHandleNavigation = () => {
     navigation.navigate('AddNotes');
   };
+  const flatListRenderItem = ({ item }: { item: Note }) => {
+    return (
+      <>
+        <TouchableOpacity
+          key={item?.id}
+          style={styles.view}
+          onPress={() => handleEdit(item)}
+        >
+          <View style={styles.imagesView}>
+            <TouchableOpacity onPress={() => handleDelete(item?.id)}>
+              <Image
+                source={images.bin}
+                style={styles.deleteImage}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.fs19} numberOfLines={2} ellipsizeMode="tail">
+            {strings.title}: {item?.title}
+          </Text>
+          <Text style={styles.fs15} numberOfLines={5}>
+            <Text style={styles.textColor} ellipsizeMode="tail">
+              {strings.description}:{' '}
+            </Text>
+            {item?.description}
+          </Text>
+
+          <Text style={styles.dateText}>
+            {moment(item.updatedAt).format('DD-MM-YYYY hh:mm A')}
+          </Text>
+        </TouchableOpacity>
+      </>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -91,51 +136,33 @@ const NotesDetails = () => {
         </TouchableOpacity>
         <Text style={styles.title}>{strings.notesList}</Text>
       </View>
-
-      <FlatList
-        data={data}
-        keyExtractor={item => item?.id?.toString()}
-        renderItem={({ item }) => {
-          return (
-            <>
-              <TouchableOpacity
-                key={item?.id}
-                style={styles.view}
-                onPress={() => handleEdit(item)}
-              >
-                <View style={styles.imagesView}>
-                  <TouchableOpacity onPress={() => handleDelete(item?.id)}>
-                    <Image
-                      source={images.bin}
-                      style={styles.deleteImage}
-                      resizeMode="contain"
-                    />
-                  </TouchableOpacity>
-                </View>
-                <Text
-                  style={styles.fs19}
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
-                >
-                  {strings.title}: {item?.title}
-                </Text>
-                <Text style={styles.fs15} numberOfLines={5}>
-                  <Text style={styles.textColor} ellipsizeMode="tail">
-                    {strings.description}:{' '}
-                  </Text>
-                  {item?.description}
-                </Text>
-
-                <Text style={styles.dateText}>
-                  {moment(item.updatedAt).format('DD-MM-YYYY hh:mm A')}
-                </Text>
-              </TouchableOpacity>
-            </>
-          );
-        }}
-        contentContainerStyle={styles.gap}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading === 'loading' ? (
+        <View style={styles.indicatorStyle}>
+          <ActivityIndicator size="large" color="#0000ff" />
+        </View>
+      ) : (
+        <FlatList
+          data={data}
+          keyExtractor={item => item?.id?.toString()}
+          renderItem={flatListRenderItem}
+          ListEmptyComponent={() => (
+            <Text
+              style={{
+                textAlign: 'center',
+                marginTop: rh(100),
+                fontSize: rf(17),
+              }}
+            >
+              No data found
+            </Text>
+          )}
+          contentContainerStyle={styles.gap}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        />
+      )}
 
       <TouchableOpacity
         onPress={onHandleNavigation}
@@ -203,6 +230,7 @@ const styles = StyleSheet.create({
     color: colors.lightGray,
     textAlign: 'right',
   },
+  indicatorStyle: { flex: 1, justifyContent: 'center' },
 });
 
 export default NotesDetails;
