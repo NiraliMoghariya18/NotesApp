@@ -1,12 +1,11 @@
 //import liraries
 import { NavigationContainer } from '@react-navigation/native';
-import React, { Component } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React from 'react';
 import StackNavigation from './src/navigations/StackNavigation';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
-import { persistor, store } from './src/redux/slice/store';
+import { persistor, store } from './src/redux/store';
 
 // create a component
 const App = () => {

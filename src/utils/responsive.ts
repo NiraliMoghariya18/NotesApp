@@ -12,5 +12,3 @@ export const rh = (value: number) => {
 export const rw = (value: number) => {
   return widthPercentageToDP((value * 100) / 430);
 };
-// export const rw = (value: number) => wp(`${value}%`);
-// export const rh = (value: number) => hp(`${value}%`);

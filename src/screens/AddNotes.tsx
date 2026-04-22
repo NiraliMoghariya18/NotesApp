@@ -1,0 +1,198 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  Alert,
+} from 'react-native';
+import { rf, rh, rw } from '../utils/responsive';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAppDispatch } from '../redux/store';
+import { images } from '../utils/image';
+import { createNotes, updateNotes } from '../redux/slice/notesSlice';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../types/navgationTyeps';
+import { strings } from '../utils/strings';
+import { CreateNotesPayload, Note } from '../types/notes.types';
+import axios from 'axios';
+import { colors } from '../utils/color';
+
+interface Error {
+  title?: string;
+  description?: string;
+}
+
+const AddNotes = () => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const [errors, setErrors] = useState<Error>({});
+  const dispatch = useAppDispatch();
+  const route = useRoute();
+  const params = route.params as { isEdit: boolean; item: Note } | undefined;
+  const editItem = params?.item;
+  const isEdit = params?.isEdit && editItem?.id;
+  const id = editItem?.id;
+
+  const [title, setTitle] = useState(editItem?.title || '');
+  const [description, setDescription] = useState(editItem?.description || '');
+
+  const createNotesPayload: CreateNotesPayload = {
+    description: description,
+    title: title,
+  };
+
+  const validate = () => {
+    const newErrors: Error = {};
+
+    if (!title.trim()) {
+      newErrors.title = 'title is required';
+    }
+    if (!description.trim()) {
+      newErrors.description = 'description is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const onSave = async () => {
+    if (!validate()) return;
+    try {
+      if (isEdit) {
+        if (!id) {
+          console.error('No ID found for editing');
+          return;
+        }
+        await dispatch(updateNotes({ id, data: createNotesPayload })).unwrap();
+      } else {
+        await dispatch(createNotes(createNotesPayload)).unwrap();
+      }
+      navigation.goBack();
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        Alert.alert(
+          'Server Error',
+          error?.response?.data?.message ||
+            'Failed to save note. Please try again.',
+        );
+      } else {
+        console.error('Non-Axios error:', error);
+      }
+    }
+  };
+
+  const handleChangeTitle = (text: string) => {
+    setTitle(text);
+    if (errors.title) {
+      setErrors(prev => ({ ...prev, title: '' }));
+    }
+  };
+
+  const handleChangeDescription = (text: string) => {
+    setDescription(text);
+    if (errors.description) {
+      setErrors(prev => ({ ...prev, description: '' }));
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.headerView}>
+        <TouchableOpacity onPress={navigation.goBack}>
+          <Image
+            source={images.back}
+            style={styles.back}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+        <Text style={styles.title}>{strings.createNotes}</Text>
+      </View>
+      <View style={styles.inputMainView}>
+        <View style={styles.inputView}>
+          <TextInput
+            placeholder="enter your title"
+            placeholderTextColor={colors.lightGray}
+            value={title}
+            style={styles.inputStyle}
+            onChangeText={handleChangeTitle}
+            multiline={true}
+            numberOfLines={2}
+          />
+        </View>
+        {errors?.title ? (
+          <Text style={styles.errorText}>{errors.title}</Text>
+        ) : null}
+      </View>
+      <View style={styles.inputMainView}>
+        <View style={styles.inputView}>
+          <TextInput
+            value={description}
+            placeholder="enter your description"
+            placeholderTextColor={colors.lightGray}
+            style={styles.inputStyle}
+            onChangeText={handleChangeDescription}
+            multiline={true}
+            numberOfLines={5}
+          />
+        </View>
+        {errors?.description ? (
+          <Text style={styles.errorText}>{errors.description}</Text>
+        ) : null}
+      </View>
+
+      <TouchableOpacity style={styles.submitView} onPress={onSave}>
+        <Text style={styles.submitText}>{strings.submit}</Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    marginHorizontal: rw(30),
+  },
+  headerView: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: rh(30),
+  },
+  title: {
+    fontSize: rf(20),
+    fontWeight: 600,
+    textAlign: 'center',
+    flex: 1,
+    marginRight: rw(20),
+  },
+  back: { width: rw(20), height: rh(20) },
+  inputView: {
+    flexDirection: 'row',
+    borderRadius: rw(14),
+    borderWidth: 2,
+    borderColor: colors.mediumDarkGray,
+  },
+  inputStyle: {
+    flex: 1,
+    color: colors.darkGray,
+    paddingVertical: rh(14),
+    paddingHorizontal: rw(15),
+    textAlignVertical: 'top',
+  },
+  errorText: { fontSize: rf(12), color: colors.red, marginTop: rh(5) },
+  submitView: {
+    backgroundColor: colors.blue,
+    borderRadius: 10,
+    paddingVertical: rh(10),
+    paddingHorizontal: rw(20),
+    marginTop: rh(10),
+    alignSelf: 'center',
+  },
+  submitText: { fontSize: rf(17), color: colors.white, fontWeight: 'bold' },
+  inputMainView: { marginVertical: rh(13) },
+});
+
+export default AddNotes;

@@ -1,0 +1,16 @@
+export const strings = {
+  password: 'Password',
+  name: 'Name',
+  email: 'Email',
+  signUp: 'Signup',
+  haveAccount: 'Have an Account?',
+  signHere: 'Sign in here',
+  login: 'Login',
+  DoNotAccount: 'Don’t have an Account?',
+  signUpHere: 'Sign up here',
+  createNotes: 'Create Notes',
+  submit: 'Submit',
+  notesList: 'Notes List',
+  title: 'Title',
+  description: 'Description',
+};
