@@ -29,7 +29,6 @@ import { Note } from '../types/notes.types';
 const NotesDetails = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
-  const data = useMyAppSelector(state => state?.notesSlice.fetchNotesData);
   const loading = useMyAppSelector(state => state?.notesSlice.status);
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = React.useCallback(() => {
@@ -38,6 +37,7 @@ const NotesDetails = () => {
       setRefreshing(false);
     }, 1000);
   }, []);
+  const notesData = useMyAppSelector(state => state?.notesSlice.fetchNotesData);
 
   useEffect(() => {
     dispatch(fetchNotes());
@@ -91,36 +91,34 @@ const NotesDetails = () => {
   };
   const flatListRenderItem = ({ item }: { item: Note }) => {
     return (
-      <>
-        <TouchableOpacity
-          key={item?.id}
-          style={styles.view}
-          onPress={() => handleEdit(item)}
-        >
-          <View style={styles.imagesView}>
-            <TouchableOpacity onPress={() => handleDelete(item?.id)}>
-              <Image
-                source={images.bin}
-                style={styles.deleteImage}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.fs19} numberOfLines={2} ellipsizeMode="tail">
-            {strings.title}: {item?.title}
+      <TouchableOpacity
+        key={item?.id}
+        style={styles.view}
+        onPress={() => handleEdit(item)}
+      >
+        <View style={styles.imagesView}>
+          <TouchableOpacity onPress={() => handleDelete(item?.id)}>
+            <Image
+              source={images.bin}
+              style={styles.deleteImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.fs19} numberOfLines={2} ellipsizeMode="tail">
+          {strings.title}: {item?.title}
+        </Text>
+        <Text style={styles.fs15} numberOfLines={5}>
+          <Text style={styles.textColor} ellipsizeMode="tail">
+            {strings.description}:{' '}
           </Text>
-          <Text style={styles.fs15} numberOfLines={5}>
-            <Text style={styles.textColor} ellipsizeMode="tail">
-              {strings.description}:{' '}
-            </Text>
-            {item?.description}
-          </Text>
+          {item?.description}
+        </Text>
 
-          <Text style={styles.dateText}>
-            {moment(item.updatedAt).format('DD-MM-YYYY hh:mm A')}
-          </Text>
-        </TouchableOpacity>
-      </>
+        <Text style={styles.dateText}>
+          {moment(item.updatedAt).format('DD-MM-YYYY hh:mm A')}
+        </Text>
+      </TouchableOpacity>
     );
   };
 
@@ -142,7 +140,7 @@ const NotesDetails = () => {
         </View>
       ) : (
         <FlatList
-          data={data}
+          data={notesData}
           keyExtractor={item => item?.id?.toString()}
           renderItem={flatListRenderItem}
           ListEmptyComponent={() => (

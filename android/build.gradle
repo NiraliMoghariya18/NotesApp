@@ -12,19 +12,21 @@ buildscript {
         mavenCentral()
       
     }
-    allprojects {
-    repositories {
-        // ... other repositories like google() and mavenCentral()
-        maven {
-            url = uri(project(":react-native-async-storage_async-storage").file("local_repo"))
-        }
-    }
-}
+   
 
     dependencies {
         classpath("com.android.tools.build:gradle")
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+    }
+}
+
+ allprojects {
+    repositories {
+        // ... other repositories like google() and mavenCentral()
+        maven {
+            url = uri(project(":react-native-async-storage_async-storage").file("local_repo"))
+        }
     }
 }
 
