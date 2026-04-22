@@ -101,10 +101,7 @@ const Login = () => {
     }, []),
   );
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-    >
+    <KeyboardAvoidingView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.textContainer}>
           <Image

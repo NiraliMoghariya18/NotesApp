@@ -22,11 +22,12 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { items, RootStackParamList } from '../types/navgationTyeps';
 import moment from 'moment';
 import { colors } from '../utils/color';
+import { Note } from '../types/notes.types';
 
 const NotesDetails = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
-  const data = useMyAppSelector(state => state?.notesSlice.fetchNotesData);
+  const notesData = useMyAppSelector(state => state?.notesSlice.fetchNotesData);
 
   useEffect(() => {
     dispatch(fetchNotes());
@@ -79,6 +80,39 @@ const NotesDetails = () => {
     navigation.navigate('AddNotes');
   };
 
+  const flatListRenderItem = ({ item }: { item: Note }) => {
+    return (
+      <TouchableOpacity
+        key={item?.id}
+        style={styles.view}
+        onPress={() => handleEdit(item)}
+      >
+        <View style={styles.imagesView}>
+          <TouchableOpacity onPress={() => handleDelete(item?.id)}>
+            <Image
+              source={images.bin}
+              style={styles.deleteImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.fs19} numberOfLines={2} ellipsizeMode="tail">
+          {strings.title}: {item?.title}
+        </Text>
+        <Text style={styles.fs15} numberOfLines={5}>
+          <Text style={styles.textColor} ellipsizeMode="tail">
+            {strings.description}:{' '}
+          </Text>
+          {item?.description}
+        </Text>
+
+        <Text style={styles.dateText}>
+          {moment(item.updatedAt).format('DD-MM-YYYY hh:mm A')}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerView}>
@@ -93,46 +127,9 @@ const NotesDetails = () => {
       </View>
 
       <FlatList
-        data={data}
+        data={notesData}
         keyExtractor={item => item?.id?.toString()}
-        renderItem={({ item }) => {
-          return (
-            <>
-              <TouchableOpacity
-                key={item?.id}
-                style={styles.view}
-                onPress={() => handleEdit(item)}
-              >
-                <View style={styles.imagesView}>
-                  <TouchableOpacity onPress={() => handleDelete(item?.id)}>
-                    <Image
-                      source={images.bin}
-                      style={styles.deleteImage}
-                      resizeMode="contain"
-                    />
-                  </TouchableOpacity>
-                </View>
-                <Text
-                  style={styles.fs19}
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
-                >
-                  {strings.title}: {item?.title}
-                </Text>
-                <Text style={styles.fs15} numberOfLines={5}>
-                  <Text style={styles.textColor} ellipsizeMode="tail">
-                    {strings.description}:{' '}
-                  </Text>
-                  {item?.description}
-                </Text>
-
-                <Text style={styles.dateText}>
-                  {moment(item.updatedAt).format('DD-MM-YYYY hh:mm A')}
-                </Text>
-              </TouchableOpacity>
-            </>
-          );
-        }}
+        renderItem={flatListRenderItem}
         contentContainerStyle={styles.gap}
         showsVerticalScrollIndicator={false}
       />
