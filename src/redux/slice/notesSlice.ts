@@ -1,9 +1,10 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import * as Keychain from 'react-native-keychain';
 import { Url } from '../../../config';
 import {
   CreateNotesPayload,
+  Note,
   NotesState,
   UpdatedData,
 } from '../../types/notes.types';
@@ -62,9 +63,7 @@ export const deleteNotes = createAsyncThunk(
       if (!credentials) {
         return rejectWithValue('No token found');
       }
-
       const token = credentials.password;
-
       await axios.delete(`${Url}/notes/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -103,14 +102,61 @@ export const updateNotes = createAsyncThunk(
   },
 );
 
+export const syncOfflineNotes = createAsyncThunk(
+  'notesSlice/syncOfflineNotes',
+  async (_, { getState, dispatch }) => {
+    const state = getState() as { notesSlice: NotesState };
+    const offlineNotes = state.notesSlice.OfflineData;
+
+    const failedNotes: Note[] = [];
+
+    for (const note of offlineNotes) {
+      try {
+        if (note.title === '1234') {
+          throw new Error('Simulated Fail');
+        }
+        await dispatch(createNotes(note)).unwrap();
+      } catch (error) {
+        failedNotes.push(note);
+      }
+    }
+    return failedNotes;
+  },
+);
+
 const initialState: NotesState = {
   fetchNotesData: [],
   status: 'idle',
+  OfflineData: [],
 };
 const notesSlice = createSlice({
   name: 'notesSlice',
   initialState,
-  reducers: {},
+  reducers: {
+    addOfflineNote: (state, action: PayloadAction<CreateNotesPayload>) => {
+      const tempNote = {
+        ...action.payload,
+        id: Date.now().toString(),
+      };
+
+      state.OfflineData.push(tempNote as Note);
+    },
+    updateOfflineNote: (
+      state,
+      action: PayloadAction<{ id: string; data: CreateNotesPayload }>,
+    ) => {
+      state.OfflineData = state.OfflineData.map(item =>
+        item.id === action.payload.id
+          ? { ...item, ...action.payload.data }
+          : item,
+      );
+    },
+    deleteOfflineNote: (state, action: PayloadAction<string>) => {
+      state.OfflineData = state.OfflineData.filter(
+        note => note.id !== action.payload,
+      );
+    },
+  },
   extraReducers: builder => {
     builder
       .addCase(createNotes.pending, state => {
@@ -155,13 +201,25 @@ const notesSlice = createSlice({
         state.fetchNotesData = state.fetchNotesData.map(item =>
           item.id === action.payload.data.id ? action.payload.data : item,
         );
-
         state.status = 'succeeded';
       })
       .addCase(updateNotes.rejected, state => {
+        state.status = 'failed';
+      })
+
+      .addCase(syncOfflineNotes.pending, state => {
+        state.status = 'loading';
+      })
+      .addCase(syncOfflineNotes.fulfilled, (state, action) => {
+        state.OfflineData = action.payload;
+        state.status = 'succeeded';
+      })
+      .addCase(syncOfflineNotes.rejected, state => {
         state.status = 'failed';
       });
   },
 });
 
 export default notesSlice.reducer;
+export const { addOfflineNote, updateOfflineNote, deleteOfflineNote } =
+  notesSlice.actions;

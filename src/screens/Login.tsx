@@ -21,6 +21,7 @@ import { LoginPayload } from '../types/notes.types';
 import { colors } from '../utils/color';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
+import axios from 'axios';
 
 interface FormError {
   email?: string;
@@ -74,7 +75,14 @@ const Login = () => {
       await dispatch(createLoginUser(payload)).unwrap();
       navigation.navigate('NotesDetails');
     } catch (error) {
-      Alert.alert('Server Error', 'Failed to Login user. Please try again.');
+      if (axios.isAxiosError(error)) {
+        Alert.alert(
+          'Login User',
+          error?.response?.data?.message || 'Something went wrong!',
+        );
+      } else {
+        console.error('Non-Axios error:', error);
+      }
     }
   };
 
@@ -153,7 +161,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.white,
   },
-  errorText: { fontSize: rf(12), color: colors.red, marginTop: rh(5) },
   headerImage: {
     width: rw(250),
     height: rh(300),

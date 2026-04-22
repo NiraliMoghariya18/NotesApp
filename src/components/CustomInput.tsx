@@ -6,22 +6,20 @@ import {
   TextInput,
   StyleProp,
   TextStyle,
-  ViewStyle,
 } from 'react-native';
-import { rf, rh, rw } from '../utils/responsive';
+import { rf, rh } from '../utils/responsive';
 import { colors } from '../utils/color';
 
 interface Props {
-  placeholderTextColor: string;
+  placeholderTextColor?: string;
   value: string;
   placeholder: string;
   multiline?: boolean;
   numberOfLines?: number;
-  style?: StyleProp<TextStyle>;
-  onChangeText?: (text: string) => void;
+  style: StyleProp<TextStyle>;
+  onChangeText: (text: string) => void;
   error?: string;
   label?: string;
-  viewStyle?: StyleProp<ViewStyle>;
 }
 
 const CustomInput = ({
@@ -33,13 +31,11 @@ const CustomInput = ({
   style,
   error,
   label,
-  viewStyle,
   onChangeText,
 }: Props) => {
-  console.log(style, 'style');
   return (
     <View style={[{ marginVertical: rh(15) }]}>
-      {label ? <Text style={styles.inputLabel}>{label}</Text> : null}
+      {label && <Text style={styles.inputLabel}>{label}</Text>}
       <TextInput
         placeholderTextColor={placeholderTextColor}
         value={value}
@@ -49,7 +45,7 @@ const CustomInput = ({
         style={[style]}
         onChangeText={onChangeText}
       />
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };

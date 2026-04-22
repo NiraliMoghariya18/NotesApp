@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,14 @@ import { useAppDispatch, useMyAppSelector } from '../redux/store';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { rf, rh, rw } from '../utils/responsive';
 import { images } from '../utils/image';
-import { deleteNotes, fetchNotes } from '../redux/slice/notesSlice';
+import { useNetInfo } from '@react-native-community/netinfo';
+
+import {
+  deleteNotes,
+  deleteOfflineNote,
+  fetchNotes,
+  syncOfflineNotes,
+} from '../redux/slice/notesSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
 import { logout } from '../redux/slice/authSlice';
@@ -29,19 +36,43 @@ import { Note } from '../types/notes.types';
 const NotesDetails = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
-  const data = useMyAppSelector(state => state?.notesSlice.fetchNotesData);
+  const OfflineData = useMyAppSelector(state => state?.notesSlice.OfflineData);
+  const data = useMyAppSelector(state => {
+    const onlineData =
+      state?.notesSlice?.fetchNotesData?.map(item => ({
+        ...item,
+        source: 'online',
+      })) || [];
+
+    const offlineData =
+      state?.notesSlice?.OfflineData?.map(item => ({
+        ...item,
+        source: 'offline',
+      })) || [];
+
+    return [...onlineData, ...offlineData];
+  });
+
+  console.log('OfflineData :>> ', OfflineData);
+  console.log('data :>> ', data);
   const loading = useMyAppSelector(state => state?.notesSlice.status);
   const [refreshing, setRefreshing] = useState(false);
-  const onRefresh = React.useCallback(() => {
+  const { isConnected, isInternetReachable } = useNetInfo();
+  const isSyncing = useRef(false);
+
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  }, []);
+    await dispatch(fetchNotes());
+    setRefreshing(false);
+  }, [dispatch]);
 
   useEffect(() => {
+    if (isConnected && isInternetReachable && !isSyncing.current) {
+      isSyncing.current = true;
+      dispatch(syncOfflineNotes()).finally(() => (isSyncing.current = false));
+    }
     dispatch(fetchNotes());
-  }, []);
+  }, [isConnected, isInternetReachable]);
 
   const handleEdit = (item: items) => {
     navigation.navigate('AddNotes', {
@@ -56,7 +87,13 @@ const NotesDetails = () => {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => dispatch(deleteNotes(id)),
+        onPress: () => {
+          data.map(i => {
+            i.source === 'offline'
+              ? dispatch(deleteOfflineNote(id))
+              : dispatch(deleteNotes(id));
+          });
+        },
       },
     ]);
   };
@@ -76,10 +113,7 @@ const NotesDetails = () => {
             await AsyncStorage.clear();
             dispatch(logout());
           } catch (error) {
-            Alert.alert(
-              'Server Error',
-              'Failed to logout user. Please try again.',
-            );
+            Alert.alert('Logout User', 'Something went wrong!');
           }
         },
       },
@@ -90,39 +124,56 @@ const NotesDetails = () => {
     navigation.navigate('AddNotes');
   };
   const flatListRenderItem = ({ item }: { item: Note }) => {
+    console.log(item, 'item');
     return (
-      <>
-        <TouchableOpacity
-          key={item?.id}
-          style={styles.view}
-          onPress={() => handleEdit(item)}
-        >
-          <View style={styles.imagesView}>
-            <TouchableOpacity onPress={() => handleDelete(item?.id)}>
-              <Image
-                source={images.bin}
-                style={styles.deleteImage}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.fs19} numberOfLines={2} ellipsizeMode="tail">
-            {strings.title}: {item?.title}
+      <TouchableOpacity
+        key={item?.id}
+        style={styles.view}
+        onPress={() => handleEdit(item)}
+      >
+        <View style={styles.imagesView}>
+          {item.source === 'offline' && (
+            <View
+              key={item.id}
+              style={{
+                backgroundColor: colors.blueGray,
+                borderRadius: 10,
+                paddingVertical: rh(5),
+                paddingHorizontal: rw(12),
+              }}
+            >
+              <Text>offline</Text>
+            </View>
+          )}
+          <View style={{ width: 250 }}></View>
+          <TouchableOpacity onPress={() => handleDelete(item?.id)}>
+            <Image
+              source={images.bin}
+              style={styles.deleteImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.fs19} numberOfLines={2} ellipsizeMode="tail">
+          {strings.title}: {item?.title}
+        </Text>
+        <Text style={styles.fs15} numberOfLines={5}>
+          <Text style={styles.textColor} ellipsizeMode="tail">
+            {strings.description}:{' '}
           </Text>
-          <Text style={styles.fs15} numberOfLines={5}>
-            <Text style={styles.textColor} ellipsizeMode="tail">
-              {strings.description}:{' '}
-            </Text>
-            {item?.description}
-          </Text>
+          {item?.description}
+        </Text>
 
-          <Text style={styles.dateText}>
-            {moment(item.updatedAt).format('DD-MM-YYYY hh:mm A')}
-          </Text>
-        </TouchableOpacity>
-      </>
+        <Text style={styles.dateText}>
+          {moment(item.updatedAt).format('DD-MM-YYYY hh:mm A')}
+        </Text>
+      </TouchableOpacity>
     );
   };
+
+  const flatListExtraFunction = () => (
+    <Text style={styles.noData}>No data found</Text>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -145,17 +196,7 @@ const NotesDetails = () => {
           data={data}
           keyExtractor={item => item?.id?.toString()}
           renderItem={flatListRenderItem}
-          ListEmptyComponent={() => (
-            <Text
-              style={{
-                textAlign: 'center',
-                marginTop: rh(100),
-                fontSize: rf(17),
-              }}
-            >
-              No data found
-            </Text>
-          )}
+          ListEmptyComponent={flatListExtraFunction}
           contentContainerStyle={styles.gap}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -193,10 +234,14 @@ const styles = StyleSheet.create({
   imagesView: {
     flexDirection: 'row',
     gap: rw(5),
-    justifyContent: 'flex-end',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    // flex: 1,
   },
-  deleteImage: { width: rw(20), height: rh(20) },
+  deleteImage: {
+    width: rw(22),
+    height: rh(22),
+  },
   fs19: { fontSize: rf(19), marginBottom: rh(5) },
   fs15: { fontSize: rf(15), color: colors.lightGray },
   textColor: { color: colors.darkGray },
@@ -231,6 +276,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   indicatorStyle: { flex: 1, justifyContent: 'center' },
+  noData: {
+    textAlign: 'center',
+    marginTop: rh(100),
+    fontSize: rf(17),
+    fontWeight: 500,
+  },
 });
 
 export default NotesDetails;

@@ -12,7 +12,12 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppDispatch } from '../redux/store';
 import { images } from '../utils/image';
-import { createNotes, updateNotes } from '../redux/slice/notesSlice';
+import {
+  addOfflineNote,
+  createNotes,
+  updateOfflineNote,
+  updateNotes,
+} from '../redux/slice/notesSlice';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navgationTyeps';
 import { strings } from '../utils/strings';
@@ -21,6 +26,7 @@ import axios from 'axios';
 import { colors } from '../utils/color';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
+import NetInfo from '@react-native-community/netinfo';
 
 interface Error {
   title?: string;
@@ -61,6 +67,21 @@ const AddNotes = () => {
 
   const onSave = async () => {
     if (!validate()) return;
+    const network = await NetInfo.fetch();
+
+    if (!network.isConnected) {
+      if (isEdit) {
+        if (!id) {
+          console.error('No ID found for editing');
+          return;
+        }
+        await dispatch(updateOfflineNote({ id, data: createNotesPayload }));
+      } else {
+        dispatch(addOfflineNote(createNotesPayload));
+      }
+      navigation.goBack();
+      return;
+    }
     try {
       if (isEdit) {
         if (!id) {
@@ -75,9 +96,8 @@ const AddNotes = () => {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         Alert.alert(
-          'Server Error',
-          error?.response?.data?.message ||
-            'Failed to save note. Please try again.',
+          'Add Note',
+          error?.response?.data?.message || 'Something went wrong!',
         );
       } else {
         console.error('Non-Axios error:', error);
@@ -167,10 +187,8 @@ const styles = StyleSheet.create({
     borderColor: colors.mediumDarkGray,
     paddingVertical: rh(14),
     paddingHorizontal: rw(15),
-    textAlignVertical: 'top',
     borderRadius: rw(14),
   },
-  errorText: { fontSize: rf(12), color: colors.red, marginTop: rh(5) },
   submitView: {
     backgroundColor: colors.blue,
     borderRadius: 10,

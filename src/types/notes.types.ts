@@ -9,6 +9,7 @@ export interface LoginPayload {
 }
 
 export interface CreateNotesPayload {
+  id?: string;
   description: string;
   title: string;
 }
@@ -20,11 +21,13 @@ export interface Note {
   userId: string;
   createdAt: number;
   updatedAt: number;
+  source: string;
 }
 
 export interface NotesState {
   fetchNotesData: Note[];
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  OfflineData: Note[];
 }
 
 export interface UpdatedData {

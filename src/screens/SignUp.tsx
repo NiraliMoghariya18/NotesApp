@@ -22,6 +22,7 @@ import { strings } from '../utils/strings';
 import { colors } from '../utils/color';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
+import axios from 'axios';
 
 interface Error {
   email?: string;
@@ -68,7 +69,14 @@ const SignUp = () => {
       await dispatch(createSignUpUsers({ name, email, password }));
       navigation.navigate('Login');
     } catch (error) {
-      Alert.alert('Server Error', 'Failed to Sign user. Please try again.');
+      if (axios.isAxiosError(error)) {
+        Alert.alert(
+          'SignUp User',
+          error?.response?.data?.message || 'Something went wrong!',
+        );
+      } else {
+        console.error('Non-Axios error:', error);
+      }
     }
   };
   const onChangeEmail = (text: string) => {
