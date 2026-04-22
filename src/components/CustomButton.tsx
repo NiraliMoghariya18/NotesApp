@@ -1,7 +1,5 @@
-//import liraries
-import React, { Component } from 'react';
+import React from 'react';
 import {
-  View,
   Text,
   StyleSheet,
   TouchableOpacity,
@@ -11,7 +9,6 @@ import {
 import { colors } from '../utils/color';
 import { rf, rh, rw } from '../utils/responsive';
 
-// create a component
 interface Props {
   label: string;
   onPress: () => void;
@@ -25,7 +22,6 @@ const CustomButton = ({ label, onPress, style }: Props) => {
   );
 };
 
-// define your styles
 const styles = StyleSheet.create({
   buttonContainer: {
     backgroundColor: colors.blue,
@@ -40,5 +36,4 @@ const styles = StyleSheet.create({
   },
 });
 
-//make this component available to the app
 export default CustomButton;

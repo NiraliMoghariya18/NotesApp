@@ -75,9 +75,8 @@ const AddNotes = () => {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         Alert.alert(
-          'Server Error',
-          error?.response?.data?.message ||
-            'Failed to save note. Please try again.',
+          'Add Note',
+          error?.response?.data?.message || 'Something went wrong!',
         );
       } else {
         console.error('Non-Axios error:', error);
@@ -167,10 +166,8 @@ const styles = StyleSheet.create({
     borderColor: colors.mediumDarkGray,
     paddingVertical: rh(14),
     paddingHorizontal: rw(15),
-    textAlignVertical: 'top',
     borderRadius: rw(14),
   },
-  errorText: { fontSize: rf(12), color: colors.red, marginTop: rh(5) },
   submitView: {
     backgroundColor: colors.blue,
     borderRadius: 10,
