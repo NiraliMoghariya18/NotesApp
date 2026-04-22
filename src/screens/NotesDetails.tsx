@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   Image,
   FlatList,
   Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useAppDispatch, useMyAppSelector } from '../redux/store';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,6 +29,14 @@ import { Note } from '../types/notes.types';
 const NotesDetails = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
+  const loading = useMyAppSelector(state => state?.notesSlice.status);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
   const notesData = useMyAppSelector(state => state?.notesSlice.fetchNotesData);
 
   useEffect(() => {
@@ -79,7 +89,6 @@ const NotesDetails = () => {
   const onHandleNavigation = () => {
     navigation.navigate('AddNotes');
   };
-
   const flatListRenderItem = ({ item }: { item: Note }) => {
     return (
       <TouchableOpacity
@@ -125,14 +134,33 @@ const NotesDetails = () => {
         </TouchableOpacity>
         <Text style={styles.title}>{strings.notesList}</Text>
       </View>
-
-      <FlatList
-        data={notesData}
-        keyExtractor={item => item?.id?.toString()}
-        renderItem={flatListRenderItem}
-        contentContainerStyle={styles.gap}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading === 'loading' ? (
+        <View style={styles.indicatorStyle}>
+          <ActivityIndicator size="large" color="#0000ff" />
+        </View>
+      ) : (
+        <FlatList
+          data={notesData}
+          keyExtractor={item => item?.id?.toString()}
+          renderItem={flatListRenderItem}
+          ListEmptyComponent={() => (
+            <Text
+              style={{
+                textAlign: 'center',
+                marginTop: rh(100),
+                fontSize: rf(17),
+              }}
+            >
+              No data found
+            </Text>
+          )}
+          contentContainerStyle={styles.gap}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        />
+      )}
 
       <TouchableOpacity
         onPress={onHandleNavigation}
@@ -200,6 +228,7 @@ const styles = StyleSheet.create({
     color: colors.lightGray,
     textAlign: 'right',
   },
+  indicatorStyle: { flex: 1, justifyContent: 'center' },
 });
 
 export default NotesDetails;

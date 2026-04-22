@@ -17,8 +17,9 @@ export interface Note {
   id: string;
   title: string;
   description: string;
-  createdAt: string;
-  updatedAt: string;
+  userId: string;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface NotesState {
