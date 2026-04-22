@@ -36,8 +36,7 @@ import { Note } from '../types/notes.types';
 const NotesDetails = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
-  const OfflineData = useMyAppSelector(state => state?.notesSlice.OfflineData);
-  const data = useMyAppSelector(state => {
+  const notesData = useMyAppSelector(state => {
     const onlineData =
       state?.notesSlice?.fetchNotesData?.map(item => ({
         ...item,
@@ -53,8 +52,6 @@ const NotesDetails = () => {
     return [...onlineData, ...offlineData];
   });
 
-  console.log('OfflineData :>> ', OfflineData);
-  console.log('data :>> ', data);
   const loading = useMyAppSelector(state => state?.notesSlice.status);
   const [refreshing, setRefreshing] = useState(false);
   const { isConnected, isInternetReachable } = useNetInfo();
@@ -88,7 +85,7 @@ const NotesDetails = () => {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
-          data.map(i => {
+          notesData.map(i => {
             i.source === 'offline'
               ? dispatch(deleteOfflineNote(id))
               : dispatch(deleteNotes(id));
@@ -193,7 +190,7 @@ const NotesDetails = () => {
         </View>
       ) : (
         <FlatList
-          data={data}
+          data={notesData}
           keyExtractor={item => item?.id?.toString()}
           renderItem={flatListRenderItem}
           ListEmptyComponent={flatListExtraFunction}
