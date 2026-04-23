@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,14 @@ import { useAppDispatch, useMyAppSelector } from '../redux/store';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { rf, rh, rw } from '../utils/responsive';
 import { images } from '../utils/image';
-import { deleteNotes, fetchNotes } from '../redux/slice/notesSlice';
+import { useNetInfo } from '@react-native-community/netinfo';
+
+import {
+  deleteNotes,
+  deleteOfflineNote,
+  fetchNotes,
+  syncOfflineNotes,
+} from '../redux/slice/notesSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
 import { logout } from '../redux/slice/authSlice';
@@ -29,19 +36,31 @@ import { Note } from '../types/notes.types';
 const NotesDetails = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
+  const notesData = useMyAppSelector(state => {
+    const offline = state.notesSlice.offlineData || [];
+    const fetched = state.notesSlice.fetchNotesData || [];
+    return [...offline, ...fetched];
+  });
+
   const loading = useMyAppSelector(state => state?.notesSlice.status);
   const [refreshing, setRefreshing] = useState(false);
-  const onRefresh = React.useCallback(() => {
+  const { isConnected, isInternetReachable } = useNetInfo();
+  const isSyncing = useRef(false);
+
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  }, []);
-  const notesData = useMyAppSelector(state => state?.notesSlice.fetchNotesData);
+    await dispatch(fetchNotes());
+    setRefreshing(false);
+  }, [dispatch]);
 
   useEffect(() => {
+    if (isConnected && isInternetReachable && !isSyncing.current) {
+      isSyncing.current = true;
+      dispatch(syncOfflineNotes()).finally(() => (isSyncing.current = false));
+    }
+
     dispatch(fetchNotes());
-  }, []);
+  }, [isConnected, isInternetReachable]);
 
   const handleEdit = (item: items) => {
     navigation.navigate('AddNotes', {
@@ -56,7 +75,13 @@ const NotesDetails = () => {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => dispatch(deleteNotes(id)),
+        onPress: () => {
+          notesData.filter(i => {
+            i.isOffline === true
+              ? dispatch(deleteOfflineNote(id))
+              : dispatch(deleteNotes(id));
+          });
+        },
       },
     ]);
   };
@@ -76,10 +101,7 @@ const NotesDetails = () => {
             await AsyncStorage.clear();
             dispatch(logout());
           } catch (error) {
-            Alert.alert(
-              'Server Error',
-              'Failed to logout user. Please try again.',
-            );
+            Alert.alert('Logout User', 'Something went wrong!');
           }
         },
       },
@@ -97,6 +119,12 @@ const NotesDetails = () => {
         onPress={() => handleEdit(item)}
       >
         <View style={styles.imagesView}>
+          {item.isOffline === true && (
+            <View key={item.id} style={styles.offlineView}>
+              <Text>{strings.offline}</Text>
+            </View>
+          )}
+          <View style={styles.width}></View>
           <TouchableOpacity onPress={() => handleDelete(item?.id)}>
             <Image
               source={images.bin}
@@ -122,6 +150,10 @@ const NotesDetails = () => {
     );
   };
 
+  const flatListExtraFunction = () => (
+    <Text style={styles.noData}>{strings.noDataFound}</Text>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerView}>
@@ -133,6 +165,13 @@ const NotesDetails = () => {
           />
         </TouchableOpacity>
         <Text style={styles.title}>{strings.notesList}</Text>
+        <TouchableOpacity onPress={() => dispatch(syncOfflineNotes())}>
+          <Image
+            source={images.sync}
+            style={styles.logout}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
       </View>
       {loading === 'loading' ? (
         <View style={styles.indicatorStyle}>
@@ -143,17 +182,7 @@ const NotesDetails = () => {
           data={notesData}
           keyExtractor={item => item?.id?.toString()}
           renderItem={flatListRenderItem}
-          ListEmptyComponent={() => (
-            <Text
-              style={{
-                textAlign: 'center',
-                marginTop: rh(100),
-                fontSize: rf(17),
-              }}
-            >
-              No data found
-            </Text>
-          )}
+          ListEmptyComponent={flatListExtraFunction}
           contentContainerStyle={styles.gap}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -181,6 +210,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: rw(20),
   },
+  width: { width: 250 },
   gap: { gap: rh(20) },
   view: {
     backgroundColor: colors.white,
@@ -191,10 +221,13 @@ const styles = StyleSheet.create({
   imagesView: {
     flexDirection: 'row',
     gap: rw(5),
-    justifyContent: 'flex-end',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  deleteImage: { width: rw(20), height: rh(20) },
+  deleteImage: {
+    width: rw(22),
+    height: rh(22),
+  },
   fs19: { fontSize: rf(19), marginBottom: rh(5) },
   fs15: { fontSize: rf(15), color: colors.lightGray },
   textColor: { color: colors.darkGray },
@@ -211,7 +244,7 @@ const styles = StyleSheet.create({
     fontWeight: 600,
     textAlign: 'center',
     flex: 1,
-    marginRight: rw(30),
+    // marginRight: rw(30),
   },
   headerView: {
     flexDirection: 'row',
@@ -229,6 +262,18 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   indicatorStyle: { flex: 1, justifyContent: 'center' },
+  noData: {
+    textAlign: 'center',
+    marginTop: rh(100),
+    fontSize: rf(17),
+    fontWeight: 500,
+  },
+  offlineView: {
+    backgroundColor: colors.blueGray,
+    borderRadius: 10,
+    paddingVertical: rh(5),
+    paddingHorizontal: rw(12),
+  },
 });
 
 export default NotesDetails;

@@ -10,9 +10,14 @@ import {
 import { rf, rh, rw } from '../utils/responsive';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppDispatch } from '../redux/store';
+import { useAppDispatch, useMyAppSelector } from '../redux/store';
 import { images } from '../utils/image';
-import { createNotes, updateNotes } from '../redux/slice/notesSlice';
+import {
+  addOfflineNote,
+  createNotes,
+  updateOfflineNote,
+  updateNotes,
+} from '../redux/slice/notesSlice';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navgationTyeps';
 import { strings } from '../utils/strings';
@@ -21,6 +26,7 @@ import axios from 'axios';
 import { colors } from '../utils/color';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
+import NetInfo from '@react-native-community/netinfo';
 
 interface Error {
   title?: string;
@@ -36,11 +42,16 @@ const AddNotes = () => {
   const editItem = params?.item;
   const isEdit = params?.isEdit && editItem?.id;
   const id = editItem?.id;
-
   const [title, setTitle] = useState(editItem?.title || '');
   const [description, setDescription] = useState(editItem?.description || '');
 
+  const notesSlice = useMyAppSelector(state => [
+    ...state.notesSlice.offlineData,
+    ...state.notesSlice.fetchNotesData,
+  ]);
+  console.log(notesSlice, 'notesSlice');
   const createNotesPayload: CreateNotesPayload = {
+    id: Date.now().toString(),
     description: description,
     title: title,
   };
@@ -61,8 +72,30 @@ const AddNotes = () => {
 
   const onSave = async () => {
     if (!validate()) return;
-    try {
+    const network = await NetInfo.fetch();
+
+    if (!network.isConnected) {
       if (isEdit) {
+        if (!id) {
+          console.error('No ID found for editing');
+          return;
+        }
+        await dispatch(updateOfflineNote({ id, data: createNotesPayload }));
+      } else {
+        await dispatch(addOfflineNote(createNotesPayload));
+      }
+      navigation.goBack();
+      return;
+    }
+
+    try {
+      if (isEdit && editItem.isOffline === true) {
+        if (!id) {
+          console.error('No ID found for editing');
+          return;
+        }
+        await dispatch(updateOfflineNote({ id, data: createNotesPayload }));
+      } else if (isEdit) {
         if (!id) {
           console.error('No ID found for editing');
           return;
@@ -108,6 +141,7 @@ const AddNotes = () => {
             resizeMode="contain"
           />
         </TouchableOpacity>
+
         <Text style={styles.title}>{strings.createNotes}</Text>
       </View>
 
