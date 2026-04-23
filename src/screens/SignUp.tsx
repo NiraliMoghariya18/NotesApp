@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   Image,
   Alert,
@@ -12,7 +11,6 @@ import {
 
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-
 import { rw, rh, rf } from '../utils/responsive';
 import { useAppDispatch } from '../redux/store';
 import { images } from '../utils/image';

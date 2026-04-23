@@ -22,12 +22,13 @@ export interface Note {
   createdAt: number;
   updatedAt: number;
   source: string;
+  isOffline?: boolean;
 }
 
 export interface NotesState {
   fetchNotesData: Note[];
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
-  OfflineData: Note[];
+  offlineData: Note[];
 }
 
 export interface UpdatedData {

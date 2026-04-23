@@ -37,19 +37,9 @@ const NotesDetails = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
   const notesData = useMyAppSelector(state => {
-    const onlineData =
-      state?.notesSlice?.fetchNotesData?.map(item => ({
-        ...item,
-        source: 'online',
-      })) || [];
-
-    const offlineData =
-      state?.notesSlice?.OfflineData?.map(item => ({
-        ...item,
-        source: 'offline',
-      })) || [];
-
-    return [...onlineData, ...offlineData];
+    const offline = state.notesSlice.offlineData || [];
+    const fetched = state.notesSlice.fetchNotesData || [];
+    return [...offline, ...fetched];
   });
 
   const loading = useMyAppSelector(state => state?.notesSlice.status);
@@ -68,6 +58,7 @@ const NotesDetails = () => {
       isSyncing.current = true;
       dispatch(syncOfflineNotes()).finally(() => (isSyncing.current = false));
     }
+
     dispatch(fetchNotes());
   }, [isConnected, isInternetReachable]);
 
@@ -85,8 +76,8 @@ const NotesDetails = () => {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
-          notesData.map(i => {
-            i.source === 'offline'
+          notesData.filter(i => {
+            i.isOffline === true
               ? dispatch(deleteOfflineNote(id))
               : dispatch(deleteNotes(id));
           });
@@ -121,7 +112,6 @@ const NotesDetails = () => {
     navigation.navigate('AddNotes');
   };
   const flatListRenderItem = ({ item }: { item: Note }) => {
-    console.log(item, 'item');
     return (
       <TouchableOpacity
         key={item?.id}
@@ -129,20 +119,12 @@ const NotesDetails = () => {
         onPress={() => handleEdit(item)}
       >
         <View style={styles.imagesView}>
-          {item.source === 'offline' && (
-            <View
-              key={item.id}
-              style={{
-                backgroundColor: colors.blueGray,
-                borderRadius: 10,
-                paddingVertical: rh(5),
-                paddingHorizontal: rw(12),
-              }}
-            >
-              <Text>offline</Text>
+          {item.isOffline === true && (
+            <View key={item.id} style={styles.offlineView}>
+              <Text>{strings.offline}</Text>
             </View>
           )}
-          <View style={{ width: 250 }}></View>
+          <View style={styles.width}></View>
           <TouchableOpacity onPress={() => handleDelete(item?.id)}>
             <Image
               source={images.bin}
@@ -169,7 +151,7 @@ const NotesDetails = () => {
   };
 
   const flatListExtraFunction = () => (
-    <Text style={styles.noData}>No data found</Text>
+    <Text style={styles.noData}>{strings.noDataFound}</Text>
   );
 
   return (
@@ -183,6 +165,13 @@ const NotesDetails = () => {
           />
         </TouchableOpacity>
         <Text style={styles.title}>{strings.notesList}</Text>
+        <TouchableOpacity onPress={() => dispatch(syncOfflineNotes())}>
+          <Image
+            source={images.sync}
+            style={styles.logout}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
       </View>
       {loading === 'loading' ? (
         <View style={styles.indicatorStyle}>
@@ -221,6 +210,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: rw(20),
   },
+  width: { width: 250 },
   gap: { gap: rh(20) },
   view: {
     backgroundColor: colors.white,
@@ -233,7 +223,6 @@ const styles = StyleSheet.create({
     gap: rw(5),
     alignItems: 'center',
     justifyContent: 'space-between',
-    // flex: 1,
   },
   deleteImage: {
     width: rw(22),
@@ -255,7 +244,7 @@ const styles = StyleSheet.create({
     fontWeight: 600,
     textAlign: 'center',
     flex: 1,
-    marginRight: rw(30),
+    // marginRight: rw(30),
   },
   headerView: {
     flexDirection: 'row',
@@ -278,6 +267,12 @@ const styles = StyleSheet.create({
     marginTop: rh(100),
     fontSize: rf(17),
     fontWeight: 500,
+  },
+  offlineView: {
+    backgroundColor: colors.blueGray,
+    borderRadius: 10,
+    paddingVertical: rh(5),
+    paddingHorizontal: rw(12),
   },
 });
 

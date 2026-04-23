@@ -13,4 +13,6 @@ export const strings = {
   notesList: 'Notes List',
   title: 'Title',
   description: 'Description',
+  noDataFound: 'No data found',
+  offline: 'offline',
 };

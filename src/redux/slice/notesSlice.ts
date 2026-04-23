@@ -106,7 +106,7 @@ export const syncOfflineNotes = createAsyncThunk(
   'notesSlice/syncOfflineNotes',
   async (_, { getState, dispatch }) => {
     const state = getState() as { notesSlice: NotesState };
-    const offlineNotes = state.notesSlice.OfflineData;
+    const offlineNotes = state.notesSlice.offlineData;
 
     const failedNotes: Note[] = [];
 
@@ -127,7 +127,7 @@ export const syncOfflineNotes = createAsyncThunk(
 const initialState: NotesState = {
   fetchNotesData: [],
   status: 'idle',
-  OfflineData: [],
+  offlineData: [],
 };
 const notesSlice = createSlice({
   name: 'notesSlice',
@@ -137,22 +137,24 @@ const notesSlice = createSlice({
       const tempNote = {
         ...action.payload,
         id: Date.now().toString(),
+        isOffline: true,
       };
 
-      state.OfflineData.push(tempNote as Note);
+      state.offlineData.push(tempNote as Note);
     },
     updateOfflineNote: (
       state,
       action: PayloadAction<{ id: string; data: CreateNotesPayload }>,
     ) => {
-      state.OfflineData = state.OfflineData.map(item =>
+      if (!state.offlineData) return;
+      state.offlineData = state.offlineData.map(item =>
         item.id === action.payload.id
           ? { ...item, ...action.payload.data }
           : item,
       );
     },
     deleteOfflineNote: (state, action: PayloadAction<string>) => {
-      state.OfflineData = state.OfflineData.filter(
+      state.offlineData = state.offlineData.filter(
         note => note.id !== action.payload,
       );
     },
@@ -211,10 +213,10 @@ const notesSlice = createSlice({
         state.status = 'loading';
       })
       .addCase(syncOfflineNotes.fulfilled, (state, action) => {
-        state.OfflineData = action.payload;
+        state.offlineData = action.payload;
         state.status = 'succeeded';
       })
-      .addCase(syncOfflineNotes.rejected, state => {
+      .addCase(syncOfflineNotes.rejected, (state, action) => {
         state.status = 'failed';
       });
   },
