@@ -4,4 +4,5 @@ export const images = {
   logout: require('../assets/images/logout.png'),
   frontImage: require('../assets/images/frontImage.png'),
   back: require('../assets/images/back.png'),
+  sync: require('../assets/images/sync.png'),
 };

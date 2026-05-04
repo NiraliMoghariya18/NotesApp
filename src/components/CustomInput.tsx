@@ -34,7 +34,7 @@ const CustomInput = ({
   onChangeText,
 }: Props) => {
   return (
-    <View style={[{ marginVertical: rh(15) }]}>
+    <View style={styles.View}>
       {label && <Text style={styles.inputLabel}>{label}</Text>}
       <TextInput
         placeholderTextColor={placeholderTextColor}
@@ -52,6 +52,7 @@ const CustomInput = ({
 const styles = StyleSheet.create({
   errorText: { fontSize: rf(12), color: colors.red, marginTop: rh(5) },
   inputLabel: { fontSize: rf(14), marginBottom: rh(5) },
+  View: { marginVertical: rh(15) },
 });
 
 export default CustomInput;
